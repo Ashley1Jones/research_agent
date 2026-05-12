@@ -14,7 +14,7 @@
             "request": "launch",
             "program": "main.py",
             "console": "integratedTerminal",
-            // "envFile": "${workspaceFolder}/development.env",
+            "envFile": "${workspaceFolder}/development.env",
             "justMyCode": false,
             "env": {
             }

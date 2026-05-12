@@ -1,16 +1,14 @@
+# stdlibs
 from dataclasses import dataclass
 from functools import partial
 from typing import List, TypedDict
+import os
+import logging
 
-from langgraph.graph import StateGraph, END
-
-
-@dataclass(frozen=True)
-class ResearchAuditConfig:
-    default_claims: tuple[str, ...]
-    evidence_terms: tuple[str, ...]
-    architecture_terms: tuple[str, ...]
-    action_prefix: str
+# installed libs
+import pydantic
+from langchain_ollama import ChatOllama
+from langgraph.graph import END, StateGraph
 
 
 class ResearchAuditState(TypedDict):
@@ -20,43 +18,91 @@ class ResearchAuditState(TypedDict):
     action_items: List[str]
 
 
-def extract_claims(
-    state: ResearchAuditState, *, audit_config: ResearchAuditConfig
-) -> ResearchAuditState:
-    # In a real version, this would call an LLM.
-    claims = list(audit_config.default_claims)
+@dataclass(frozen=True)
+class ResearchAuditConfig:
+    llm: ChatOllama
+    default_claims: tuple[str, ...]
+    action_prefix: str
+
+
+def parse_bullets(text: str | list) -> list[str]:
+    """Parse a bullet-point LLM response into a clean list of strings."""
+    items: list[str] = []
+    lines = text if isinstance(text, list) else text.splitlines()
+
+    for line in lines:
+        cleaned = line.strip()
+
+        if not cleaned:
+            continue
+
+        cleaned = cleaned.removeprefix("-").strip()
+        cleaned = cleaned.removeprefix("*").strip()
+
+        if cleaned:
+            items.append(cleaned)
+
+    return items
+
+
+def extract_claims(state: ResearchAuditState, *, audit_config: ResearchAuditConfig) -> ResearchAuditState:
+    response = audit_config.llm.invoke(f"""
+        Extract the main research or technical claims from the text below.
+
+        Return only a bullet-point list.
+        Do not include explanations or headings.
+
+        Text:
+        {state["document_text"]}
+        """)
+
+    claims = parse_bullets(response.content)
+
+    if not claims:
+        claims = list(audit_config.default_claims)
 
     return {**state, "claims": claims}
 
 
-def find_logic_gaps(
-    state: ResearchAuditState, *, audit_config: ResearchAuditConfig
-) -> ResearchAuditState:
-    claims = state["claims"]
+def find_logic_gaps(state: ResearchAuditState, *, audit_config: ResearchAuditConfig) -> ResearchAuditState:
+    claims_text = "\n".join(f"- {claim}" for claim in state["claims"])
 
-    # In a real version, this would call another LLM.
-    gaps = []
+    response = audit_config.llm.invoke(f"""
+        Review the following claims and identify logical gaps, missing evidence,
+        vague assumptions, unsupported conclusions, or places where further
+        research is needed.
 
-    for claim in claims:
-        if any(term in claim for term in audit_config.evidence_terms):
-            gaps.append(f"Claim needs measurable evidence or evaluation: {claim}")
+        Return only a bullet-point list.
+        Do not include explanations or headings.
 
-        if any(term in claim for term in audit_config.architecture_terms):
-            gaps.append(
-                f"Claim needs architectural justification or benchmark: {claim}"
-            )
+        Claims:
+        {claims_text}
+        """)
 
-    return {**state, "logic_gaps": gaps}
+    logic_gaps = parse_bullets(response.content)
+
+    return {**state, "logic_gaps": logic_gaps}
 
 
-def generate_action_items(
-    state: ResearchAuditState, *, audit_config: ResearchAuditConfig
-) -> ResearchAuditState:
-    gaps = state["logic_gaps"]
+def generate_action_items(state: ResearchAuditState, *, audit_config: ResearchAuditConfig) -> ResearchAuditState:
+    gaps_text = "\n".join(f"- {gap}" for gap in state["logic_gaps"])
 
-    actions = [f"{audit_config.action_prefix}: {gap}" for gap in gaps]
+    response = audit_config.llm.invoke(f"""
+        Convert the following research gaps into clear, actionable next steps.
 
-    return {**state, "action_items": actions}
+        Each action should begin with this prefix:
+        "{audit_config.action_prefix}"
+
+        Return only a bullet-point list.
+        Do not include explanations or headings.
+
+        Research gaps:
+        {gaps_text}
+        """)
+
+    action_items = parse_bullets(response.content)
+
+    return {**state, "action_items": action_items}
 
 
 def build_workflow(config: ResearchAuditConfig):
@@ -65,7 +111,8 @@ def build_workflow(config: ResearchAuditConfig):
     workflow.add_node("extract_claims", partial(extract_claims, audit_config=config))
     workflow.add_node("find_logic_gaps", partial(find_logic_gaps, audit_config=config))
     workflow.add_node(
-        "generate_action_items", partial(generate_action_items, audit_config=config)
+        "generate_action_items",
+        partial(generate_action_items, audit_config=config),
     )
 
     workflow.set_entry_point("extract_claims")
@@ -77,15 +124,40 @@ def build_workflow(config: ResearchAuditConfig):
     return workflow.compile()
 
 
-def main():
+class EnvVars(pydantic.BaseModel):
+    MODEL_TYPE: str
+    MODEL_HOST_ADDRESS: str
+    MODEL_HOST_PORT: int
+
+    def create_url(
+        self,
+    ) -> str:
+        return f"http://{self.MODEL_HOST_ADDRESS}:{self.MODEL_HOST_PORT}"
+
+
+ENV_VARS = EnvVars.model_validate(dict(os.environ))
+
+
+def main() -> None:
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+
+    llm = ChatOllama(
+        model=ENV_VARS.MODEL_TYPE,
+        base_url=ENV_VARS.create_url(),
+        temperature=0,
+    )
+
     config = ResearchAuditConfig(
+        llm=llm,
         default_claims=(
             "The proposed system improves research quality.",
             "The architecture is scalable.",
             "The approach reduces hallucinations.",
         ),
-        evidence_terms=("improves", "reduces"),
-        architecture_terms=("scalable",),
         action_prefix="Add supporting evidence or experiment for",
     )
 
@@ -95,6 +167,7 @@ def main():
         "document_text": """
         Our multi-agent research system improves research quality,
         reduces hallucinations, and provides a scalable architecture.
+        The system will outperform existing single-agent approaches.
         """,
         "claims": [],
         "logic_gaps": [],
@@ -103,17 +176,17 @@ def main():
 
     result = app.invoke(initial_state)
 
-    print("Claims:")
+    logging.info("Claims:")
     for claim in result["claims"]:
-        print("-", claim)
+        logging.info("-", claim)
 
-    print("\nLogic gaps:")
+    logging.info("\nLogic gaps:")
     for gap in result["logic_gaps"]:
-        print("-", gap)
+        logging.info("-", gap)
 
-    print("\nAction items:")
+    logging.info("\nAction items:")
     for item in result["action_items"]:
-        print("-", item)
+        logging.info("-", item)
 
 
 if __name__ == "__main__":
