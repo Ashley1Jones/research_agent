@@ -1,11 +1,11 @@
 import os
 import logging
 
-from langchain_ollama import ChatOllama
+import langchain_ollama
 
-from research_agent.models import EnvVars, ResearchAuditConfig
-from research_agent.states import ResearchAuditState
-from research_agent.workflow import build_workflow
+import research_agent.models
+import research_agent.states
+import research_agent.workflow
 
 
 def main() -> None:
@@ -15,15 +15,15 @@ def main() -> None:
         datefmt="%Y-%m-%d %H:%M:%S",
     )
 
-    env_vars = EnvVars.model_validate(dict(os.environ))
+    env_vars = research_agent.models.EnvVars.model_validate(dict(os.environ))
 
-    llm = ChatOllama(
+    llm = langchain_ollama.ChatOllama(
         model=env_vars.MODEL_TYPE,
         base_url=env_vars.create_url(),
         temperature=0,
     )
 
-    config = ResearchAuditConfig(
+    config = research_agent.models.ResearchAuditConfig(
         llm=llm,
         default_claims=(
             "The proposed system improves research quality.",
@@ -33,9 +33,9 @@ def main() -> None:
         action_prefix="Add supporting evidence or experiment for",
     )
 
-    app = build_workflow(config)
+    app = research_agent.workflow.build_workflow(config)
 
-    initial_state: ResearchAuditState = {
+    initial_state: research_agent.states.ResearchAuditState = {
         "document_text": """
         Our multi-agent research system improves research quality,
         reduces hallucinations, and provides a scalable architecture.

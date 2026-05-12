@@ -1,9 +1,9 @@
-from functools import partial
+import functools
 
-from langgraph.graph import END, StateGraph
+import langgraph.graph
 
-from research_agent.models import ResearchAuditConfig
-from research_agent.states import ResearchAuditState
+import research_agent.models
+import research_agent.states
 
 
 def parse_bullets(text: str | list) -> list[str]:
@@ -27,10 +27,10 @@ def parse_bullets(text: str | list) -> list[str]:
 
 
 def extract_claims(
-    state: ResearchAuditState,
+    state: research_agent.states.ResearchAuditState,
     *,
-    audit_config: ResearchAuditConfig,
-) -> ResearchAuditState:
+    audit_config: research_agent.models.ResearchAuditConfig,
+) -> research_agent.states.ResearchAuditState:
     response = audit_config.llm.invoke(f"""
         Extract the main research or technical claims from the text below.
 
@@ -50,10 +50,10 @@ def extract_claims(
 
 
 def find_logic_gaps(
-    state: ResearchAuditState,
+    state: research_agent.states.ResearchAuditState,
     *,
-    audit_config: ResearchAuditConfig,
-) -> ResearchAuditState:
+    audit_config: research_agent.models.ResearchAuditConfig,
+) -> research_agent.states.ResearchAuditState:
     claims_text = "\n".join(f"- {claim}" for claim in state["claims"])
 
     response = audit_config.llm.invoke(f"""
@@ -74,10 +74,10 @@ def find_logic_gaps(
 
 
 def generate_action_items(
-    state: ResearchAuditState,
+    state: research_agent.states.ResearchAuditState,
     *,
-    audit_config: ResearchAuditConfig,
-) -> ResearchAuditState:
+    audit_config: research_agent.models.ResearchAuditConfig,
+) -> research_agent.states.ResearchAuditState:
     gaps_text = "\n".join(f"- {gap}" for gap in state["logic_gaps"])
 
     response = audit_config.llm.invoke(f"""
@@ -98,20 +98,20 @@ def generate_action_items(
     return {**state, "action_items": action_items}
 
 
-def build_workflow(config: ResearchAuditConfig):
-    workflow = StateGraph(ResearchAuditState)
+def build_workflow(config: research_agent.models.ResearchAuditConfig):
+    workflow = langgraph.graph.StateGraph(research_agent.states.ResearchAuditState)
 
-    workflow.add_node("extract_claims", partial(extract_claims, audit_config=config))
-    workflow.add_node("find_logic_gaps", partial(find_logic_gaps, audit_config=config))
+    workflow.add_node("extract_claims", functools.partial(extract_claims, audit_config=config))
+    workflow.add_node("find_logic_gaps", functools.partial(find_logic_gaps, audit_config=config))
     workflow.add_node(
         "generate_action_items",
-        partial(generate_action_items, audit_config=config),
+        functools.partial(generate_action_items, audit_config=config),
     )
 
     workflow.set_entry_point("extract_claims")
 
     workflow.add_edge("extract_claims", "find_logic_gaps")
     workflow.add_edge("find_logic_gaps", "generate_action_items")
-    workflow.add_edge("generate_action_items", END)
+    workflow.add_edge("generate_action_items", langgraph.graph.END)
 
     return workflow.compile()

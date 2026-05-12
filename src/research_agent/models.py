@@ -1,12 +1,11 @@
-from dataclasses import dataclass
-
+import dataclasses
 import pydantic
-from langchain_ollama import ChatOllama
+import langchain_ollama
 
 
-@dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True)
 class ResearchAuditConfig:
-    llm: ChatOllama
+    llm: langchain_ollama.ChatOllama
     default_claims: tuple[str, ...]
     action_prefix: str
 

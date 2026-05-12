@@ -1,7 +1,7 @@
-from typing import TypedDict
+import typing
 
 
-class ResearchAuditState(TypedDict):
+class ResearchAuditState(typing.TypedDict):
     document_text: str
     claims: list[str]
     logic_gaps: list[str]
