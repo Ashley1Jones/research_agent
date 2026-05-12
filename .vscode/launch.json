@@ -19,16 +19,48 @@
             "env": {
             }
         },
+        {
+            "name": "Run API",
+            "presentation": {
+                "group": "01 - Quick",
+                "order": 2
+            },
+            "type": "debugpy",
+            "request": "launch",
+            "program": "scripts/api.py",
+            "console": "integratedTerminal",
+            "envFile": "${workspaceFolder}/development.env",
+            "justMyCode": false,
+            "env": {
+            }
+        },
+        {
+            "name": "Run API Client",
+            "presentation": {
+                "group": "01 - Quick",
+                "order": 3
+            },
+            "type": "debugpy",
+            "request": "launch",
+            "program": "scripts/client.py",
+            "console": "integratedTerminal",
+            "envFile": "${workspaceFolder}/development.env",
+            "justMyCode": false,
+            "env": {
+            }
+        },
     ],
     "compounds": [
         {
-            "name": "placeholer",
+            "name": "Run API + Client",
             "presentation": {
                 "group": "01 - Compounds",
                 "order": 2
             },
             "stopAll": true,
             "configurations": [
+                "Run API",
+                "Run API Client"
             ]
         },
     ]
