@@ -178,15 +178,15 @@ def main() -> None:
 
     logging.info("Claims:")
     for claim in result["claims"]:
-        logging.info("-", claim)
+        logging.info("- %s", claim)
 
     logging.info("\nLogic gaps:")
     for gap in result["logic_gaps"]:
-        logging.info("-", gap)
+        logging.info("- %s", gap)
 
     logging.info("\nAction items:")
     for item in result["action_items"]:
-        logging.info("-", item)
+        logging.info("- %s", item)
 
 
 if __name__ == "__main__":
