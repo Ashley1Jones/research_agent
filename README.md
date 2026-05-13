@@ -1,6 +1,6 @@
 # Research Agent
 
-Research Agent is an async Python service for auditing short research or technical documents with a local Ollama-backed language model. It extracts claims, identifies logic gaps, and generates follow-up action items through a LangGraph workflow.
+Research Agent is a Python service for auditing short research or technical documents with a local Ollama-backed language model. It extracts claims, identifies logic gaps, and generates follow-up action items through a LangGraph workflow.
 
 The project can be run as a local CLI, as a FastAPI service, or through Docker Compose alongside an Ollama container.
 
