@@ -1,4 +1,5 @@
 import functools
+import typing
 
 import langgraph.graph
 
@@ -46,7 +47,8 @@ async def extract_claims(
     if not claims:
         claims = list(audit_config.default_claims)
 
-    return {**state, "claims": claims}
+    updated_state = {**state, "claims": claims}
+    return typing.cast(research_agent.states.ResearchAuditState, updated_state)
 
 
 async def find_logic_gaps(
@@ -70,7 +72,8 @@ async def find_logic_gaps(
 
     logic_gaps = parse_bullets(response.content)
 
-    return {**state, "logic_gaps": logic_gaps}
+    updated_state = {**state, "logic_gaps": logic_gaps}
+    return typing.cast(research_agent.states.ResearchAuditState, updated_state)
 
 
 async def generate_action_items(
@@ -95,7 +98,8 @@ async def generate_action_items(
 
     action_items = parse_bullets(response.content)
 
-    return {**state, "action_items": action_items}
+    updated_state = {**state, "action_items": action_items}
+    return typing.cast(research_agent.states.ResearchAuditState, updated_state)
 
 
 def build_workflow(config: research_agent.models.ResearchAuditConfig):

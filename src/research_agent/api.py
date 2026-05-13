@@ -1,4 +1,5 @@
 import fastapi
+import typing
 
 import research_agent.models
 import research_agent.service
@@ -12,7 +13,7 @@ def get_audit_config() -> research_agent.models.ResearchAuditConfig:
         env_vars = research_agent.service.load_env_vars()
         app.state.audit_config = research_agent.service.build_audit_config(env_vars)
 
-    return app.state.audit_config
+    return typing.cast(research_agent.models.ResearchAuditConfig, app.state.audit_config)
 
 
 @app.get("/health")

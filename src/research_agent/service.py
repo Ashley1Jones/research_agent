@@ -1,4 +1,5 @@
 import os
+import typing
 
 import langchain_ollama
 
@@ -53,4 +54,5 @@ async def run_audit(
         "action_items": [],
     }
 
-    return await app.ainvoke(initial_state)
+    result = await app.ainvoke(initial_state)
+    return typing.cast(research_agent.states.ResearchAuditState, result)
