@@ -14,7 +14,8 @@ class EnvVars(pydantic.BaseModel):
     MODEL_TYPE: str
     MODEL_HOST_ADDRESS: str
     MODEL_HOST_PORT: int
-    API_HOST_ADDRESS: str
+    API_BIND_ADDRESS: str
+    API_CLIENT_HOST_ADDRESS: str
     API_PORT: int
     API_CLIENT_STARTUP_DELAY_SECONDS: float
 
@@ -22,7 +23,7 @@ class EnvVars(pydantic.BaseModel):
         return f"http://{self.MODEL_HOST_ADDRESS}:{self.MODEL_HOST_PORT}"
 
     def create_api_url(self) -> str:
-        return f"http://{self.API_HOST_ADDRESS}:{self.API_PORT}"
+        return f"http://{self.API_CLIENT_HOST_ADDRESS}:{self.API_PORT}"
 
 
 class ResearchAuditRequest(pydantic.BaseModel):

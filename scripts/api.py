@@ -16,7 +16,7 @@ async def run() -> None:
     env_vars = research_agent.service.load_env_vars()
     config = uvicorn.Config(
         app="research_agent.api:app",
-        host=env_vars.API_HOST_ADDRESS,
+        host=env_vars.API_BIND_ADDRESS,
         port=env_vars.API_PORT,
     )
     server = uvicorn.Server(config)

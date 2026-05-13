@@ -1,0 +1,6 @@
+.git
+.mypy_cache
+.venv
+__pycache__
+*.py[cod]
+src/research_agent.egg-info
