@@ -70,7 +70,7 @@ async def search_arxiv(query: str, max_results: int = 5) -> list[dict]:
         link = entry.find("atom:id", ns)
 
         authors = [
-            author.find("atom:name", ns).text
+            author.find("atom:name", ns).text  # type: ignore
             for author in entry.findall("atom:author", ns)
             if author.find("atom:name", ns) is not None
         ]
