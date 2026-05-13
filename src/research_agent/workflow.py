@@ -26,12 +26,12 @@ def parse_bullets(text: str | list) -> list[str]:
     return items
 
 
-def extract_claims(
+async def extract_claims(
     state: research_agent.states.ResearchAuditState,
     *,
     audit_config: research_agent.models.ResearchAuditConfig,
 ) -> research_agent.states.ResearchAuditState:
-    response = audit_config.llm.invoke(f"""
+    response = await audit_config.llm.ainvoke(f"""
         Extract the main research or technical claims from the text below.
 
         Return only a bullet-point list.
@@ -49,14 +49,14 @@ def extract_claims(
     return {**state, "claims": claims}
 
 
-def find_logic_gaps(
+async def find_logic_gaps(
     state: research_agent.states.ResearchAuditState,
     *,
     audit_config: research_agent.models.ResearchAuditConfig,
 ) -> research_agent.states.ResearchAuditState:
     claims_text = "\n".join(f"- {claim}" for claim in state["claims"])
 
-    response = audit_config.llm.invoke(f"""
+    response = await audit_config.llm.ainvoke(f"""
         Review the following claims and identify logical gaps, missing evidence,
         vague assumptions, unsupported conclusions, or places where further
         research is needed.
@@ -73,14 +73,14 @@ def find_logic_gaps(
     return {**state, "logic_gaps": logic_gaps}
 
 
-def generate_action_items(
+async def generate_action_items(
     state: research_agent.states.ResearchAuditState,
     *,
     audit_config: research_agent.models.ResearchAuditConfig,
 ) -> research_agent.states.ResearchAuditState:
     gaps_text = "\n".join(f"- {gap}" for gap in state["logic_gaps"])
 
-    response = audit_config.llm.invoke(f"""
+    response = await audit_config.llm.ainvoke(f"""
         Convert the following research gaps into clear, actionable next steps.
 
         Each action should begin with this prefix:

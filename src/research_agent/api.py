@@ -16,15 +16,16 @@ def get_audit_config() -> research_agent.models.ResearchAuditConfig:
 
 
 @app.get("/health")
-def health() -> dict[str, str]:
+async def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
 @app.post("/audit", response_model=research_agent.models.ResearchAuditResponse)
-def audit(request: research_agent.models.ResearchAuditRequest) -> research_agent.models.ResearchAuditResponse:
-    result = research_agent.service.run_audit(
+async def audit(request: research_agent.models.ResearchAuditRequest) -> research_agent.models.ResearchAuditResponse:
+    audit_config = get_audit_config()
+    result = await research_agent.service.run_audit(
         document_text=request.document_text,
-        audit_config=get_audit_config(),
+        audit_config=audit_config,
     )
 
     return research_agent.models.ResearchAuditResponse(

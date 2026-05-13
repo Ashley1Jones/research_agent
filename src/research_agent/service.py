@@ -40,7 +40,7 @@ def build_audit_config(env_vars: research_agent.models.EnvVars) -> research_agen
     )
 
 
-def run_audit(
+async def run_audit(
     document_text: str,
     audit_config: research_agent.models.ResearchAuditConfig,
 ) -> research_agent.states.ResearchAuditState:
@@ -53,4 +53,4 @@ def run_audit(
         "action_items": [],
     }
 
-    return app.invoke(initial_state)
+    return await app.ainvoke(initial_state)

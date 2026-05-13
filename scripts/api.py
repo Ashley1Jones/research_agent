@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 import uvicorn
@@ -5,7 +6,7 @@ import uvicorn
 import research_agent.service
 
 
-def main() -> None:
+async def run() -> None:
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
@@ -13,11 +14,17 @@ def main() -> None:
     )
 
     env_vars = research_agent.service.load_env_vars()
-    uvicorn.run(
-        "research_agent.api:app",
+    config = uvicorn.Config(
+        app="research_agent.api:app",
         host=env_vars.API_HOST_ADDRESS,
         port=env_vars.API_PORT,
     )
+    server = uvicorn.Server(config)
+    await server.serve()
+
+
+def main() -> None:
+    asyncio.run(run())
 
 
 if __name__ == "__main__":

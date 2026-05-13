@@ -1,9 +1,10 @@
+import asyncio
 import logging
 
 import research_agent.service
 
 
-def main() -> None:
+async def run() -> None:
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
@@ -12,7 +13,7 @@ def main() -> None:
 
     env_vars = research_agent.service.load_env_vars()
     config = research_agent.service.build_audit_config(env_vars)
-    result = research_agent.service.run_audit(research_agent.service.DEFAULT_DOCUMENT_TEXT, config)
+    result = await research_agent.service.run_audit(research_agent.service.DEFAULT_DOCUMENT_TEXT, config)
 
     logging.info("Claims:")
     for claim in result["claims"]:
@@ -25,6 +26,10 @@ def main() -> None:
     logging.info("\nAction items:")
     for item in result["action_items"]:
         logging.info("- %s", item)
+
+
+def main() -> None:
+    asyncio.run(run())
 
 
 if __name__ == "__main__":
