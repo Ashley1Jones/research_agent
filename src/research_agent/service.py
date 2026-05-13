@@ -38,6 +38,8 @@ def build_audit_config(env_vars: research_agent.models.EnvVars) -> research_agen
         llm=llm,
         default_claims=DEFAULT_CLAIMS,
         action_prefix=ACTION_PREFIX,
+        literature_query_count=3,
+        literature_result_limit=5,
     )
 
 
@@ -50,6 +52,9 @@ async def run_audit(
     initial_state: research_agent.states.ResearchAuditState = {
         "document_text": document_text,
         "claims": [],
+        "literature_queries": [],
+        "literature_results": [],
+        "contradictions": [],
         "logic_gaps": [],
         "action_items": [],
     }

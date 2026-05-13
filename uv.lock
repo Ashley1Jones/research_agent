@@ -554,6 +554,7 @@ source = { editable = "." }
 dependencies = [
     { name = "fastapi" },
     { name = "httpx" },
+    { name = "langchain-core" },
     { name = "langchain-ollama" },
     { name = "langgraph" },
     { name = "uvicorn" },
@@ -563,6 +564,7 @@ dependencies = [
 requires-dist = [
     { name = "fastapi" },
     { name = "httpx" },
+    { name = "langchain-core" },
     { name = "langchain-ollama" },
     { name = "langgraph" },
     { name = "uvicorn" },
