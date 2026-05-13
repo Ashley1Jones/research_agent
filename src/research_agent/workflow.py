@@ -82,25 +82,25 @@ async def search_literature(
     *,
     audit_config: research_agent.models.ResearchAuditConfig,
 ) -> research_agent.states.ResearchAuditState:
-    search_tasks = []
 
+    grouped_results = []
+    # Search each api sequentially as spam errors may occur if too many requests are made
     for query in state["literature_queries"]:
-        search_tasks.append(
+        tasks = [
             run_literature_tool(
                 research_agent.research_tools.search_semantic_scholar,
                 query,
                 {"query": query, "limit": audit_config.literature_result_limit},
-            )
-        )
-        search_tasks.append(
+            ),
             run_literature_tool(
                 research_agent.research_tools.search_arxiv,
                 query,
                 {"query": query, "max_results": audit_config.literature_result_limit},
             )
-        )
+        ]
+        results = await asyncio.gather(*tasks)
+        grouped_results += results
 
-    grouped_results = await asyncio.gather(*search_tasks)
     literature_results = [result for result_group in grouped_results for result in result_group]
 
     updated_state = {**state, "literature_results": literature_results}
