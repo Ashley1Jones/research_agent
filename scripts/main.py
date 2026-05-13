@@ -19,6 +19,14 @@ async def run() -> None:
     for claim in result["claims"]:
         logging.info("- %s", claim)
 
+    logging.info("\nLiterature queries:")
+    for query in result["literature_queries"]:
+        logging.info("- %s", query)
+
+    logging.info("\nContradictions:")
+    for contradiction in result["contradictions"]:
+        logging.info("- %s", contradiction)
+
     logging.info("\nLogic gaps:")
     for gap in result["logic_gaps"]:
         logging.info("- %s", gap)

@@ -1,4 +1,6 @@
 import dataclasses
+import typing
+
 import pydantic
 import langchain_ollama
 
@@ -8,6 +10,8 @@ class ResearchAuditConfig:
     llm: langchain_ollama.ChatOllama
     default_claims: tuple[str, ...]
     action_prefix: str
+    literature_query_count: int
+    literature_result_limit: int
 
 
 class EnvVars(pydantic.BaseModel):
@@ -32,5 +36,8 @@ class ResearchAuditRequest(pydantic.BaseModel):
 
 class ResearchAuditResponse(pydantic.BaseModel):
     claims: list[str]
+    literature_queries: list[str]
+    literature_results: list[dict[str, typing.Any]]
+    contradictions: list[str]
     logic_gaps: list[str]
     action_items: list[str]

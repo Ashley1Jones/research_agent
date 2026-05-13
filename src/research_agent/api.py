@@ -31,6 +31,9 @@ async def audit(request: research_agent.models.ResearchAuditRequest) -> research
 
     return research_agent.models.ResearchAuditResponse(
         claims=result["claims"],
+        literature_queries=result["literature_queries"],
+        literature_results=typing.cast(list[dict[str, typing.Any]], result["literature_results"]),
+        contradictions=result["contradictions"],
         logic_gaps=result["logic_gaps"],
         action_items=result["action_items"],
     )
