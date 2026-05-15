@@ -1,6 +1,5 @@
 import asyncio
 import functools
-import logging
 import typing
 
 import langgraph.graph
@@ -8,8 +7,6 @@ import langgraph.graph
 import research_agent.models
 import research_agent.research_tools
 import research_agent.states
-
-import research_agent.logging_config
 
 
 def parse_bullets(text: str | list) -> list[str]:
@@ -89,12 +86,12 @@ async def search_literature(
     # Search each api sequentially as spam errors may occur if too many requests are made
     for query in state["literature_queries"]:
         tasks = [
-            run_literature_tool(
+            research_agent.research_tools.run_literature_tool(
                 research_agent.research_tools.search_semantic_scholar,
                 query,
                 {"query": query, "limit": audit_config.literature_result_limit},
             ),
-            run_literature_tool(
+            research_agent.research_tools.run_literature_tool(
                 research_agent.research_tools.search_arxiv,
                 query,
                 {"query": query, "max_results": audit_config.literature_result_limit},
@@ -107,25 +104,6 @@ async def search_literature(
 
     updated_state = {**state, "literature_results": literature_results}
     return typing.cast(research_agent.states.ResearchAuditState, updated_state)
-
-
-async def run_literature_tool(
-    tool: typing.Any,
-    query: str,
-    args: dict[str, typing.Any],
-) -> list[research_agent.states.LiteratureResult]:
-    try:
-        results = await tool.ainvoke(args)
-    except Exception as exc:
-        logging.warning("Literature tool failed for args %s: %s", args, exc)
-        return []
-
-    literature_results = []
-    for result in typing.cast(list[dict[str, typing.Any]], results):
-        result_with_query = {**result, "query": query}
-        literature_results.append(typing.cast(research_agent.states.LiteratureResult, result_with_query))
-
-    return literature_results
 
 
 async def find_contradictions(

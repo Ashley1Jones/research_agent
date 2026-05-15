@@ -1,7 +1,30 @@
 import xml.etree.ElementTree
-
+import typing
+import logging
 import httpx
+
 import langchain_core.tools
+
+import research_agent.states
+
+
+async def run_literature_tool(
+    tool: typing.Any,
+    query: str,
+    args: dict[str, typing.Any],
+) -> list[research_agent.states.LiteratureResult]:
+    try:
+        results = await tool.ainvoke(args)
+    except Exception as exc:
+        logging.warning("Literature tool failed for args %s: %s", args, exc)
+        return []
+
+    literature_results = []
+    for result in typing.cast(list[dict[str, typing.Any]], results):
+        result_with_query = {**result, "query": query}
+        literature_results.append(typing.cast(research_agent.states.LiteratureResult, result_with_query))
+
+    return literature_results
 
 
 @langchain_core.tools.tool
