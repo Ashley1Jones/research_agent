@@ -4,6 +4,7 @@ import logging
 
 import langchain_ollama
 
+import research_agent.http_client
 import research_agent.models
 import research_agent.states
 import research_agent.workflow
@@ -32,6 +33,7 @@ def build_audit_config(env_vars: research_agent.models.EnvVars) -> research_agen
         model=env_vars.MODEL_TYPE,
         base_url=env_vars.create_url(),
         temperature=0,
+        async_client_kwargs=research_agent.http_client.create_async_client_kwargs(),
     )
 
     return research_agent.models.ResearchAuditConfig(
