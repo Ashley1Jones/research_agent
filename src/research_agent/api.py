@@ -1,4 +1,5 @@
 import logging
+import time
 
 import fastapi
 import typing
@@ -15,6 +16,7 @@ app = fastapi.FastAPI(title="Research Agent API")
 
 @app.middleware("http")
 async def correlation_id_middleware(request: fastapi.Request, call_next: typing.Any) -> fastapi.Response:
+    start_time = time.perf_counter()
     correlation_id = request.headers.get("x-correlation-id") or research_agent.logging_config.generate_correlation_id()
     token = research_agent.logging_config.set_correlation_id(correlation_id)
     request.state.correlation_id = correlation_id
@@ -24,6 +26,8 @@ async def correlation_id_middleware(request: fastapi.Request, call_next: typing.
         response: fastapi.Response = await call_next(request)
         response.headers["x-correlation-id"] = correlation_id
         logging.info("Request finished")
+        end_time = time.perf_counter()
+        logging.info(f"Request took: {end_time - start_time:.4f} seconds.")
         return response
     finally:
         research_agent.logging_config.reset_correlation_id(token)
