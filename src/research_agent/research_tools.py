@@ -5,6 +5,7 @@ import httpx
 
 import langchain_core.tools
 
+import research_agent.http_client
 import research_agent.states
 
 HttpxQueryParamValue = str | int | float | bool | None | typing.Sequence[str | int | float | bool | None]
@@ -42,7 +43,7 @@ async def search_semantic_scholar(query: str, limit: int = 5) -> list[dict[str, 
         "fields": "title,abstract,year,url,citationCount,authors",
     }
 
-    async with httpx.AsyncClient(timeout=20) as client:
+    async with research_agent.http_client.create_async_client(timeout=httpx.Timeout(20)) as client:
         response = await client.get(url, params=params)
         response.raise_for_status()
 
@@ -82,7 +83,7 @@ async def search_arxiv(query: str, max_results: int = 5) -> list[dict[str, typin
         "sortOrder": "descending",
     }
 
-    async with httpx.AsyncClient(timeout=20) as client:
+    async with research_agent.http_client.create_async_client(timeout=httpx.Timeout(20)) as client:
         response = await client.get(url, params=params)
         response.raise_for_status()
 
