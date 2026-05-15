@@ -1,5 +1,6 @@
 import contextvars
 import logging
+import uuid
 
 _correlation_id_var: contextvars.ContextVar[str | None] = contextvars.ContextVar(
     "correlation_id",
@@ -7,8 +8,16 @@ _correlation_id_var: contextvars.ContextVar[str | None] = contextvars.ContextVar
 )
 
 
+def generate_correlation_id() -> str:
+    return uuid.uuid4().hex
+
+
 def set_correlation_id(correlation_id: str) -> contextvars.Token:
     return _correlation_id_var.set(correlation_id)
+
+
+def reset_correlation_id(token: contextvars.Token) -> None:
+    _correlation_id_var.reset(token)
 
 
 class CorrelationIdFilter(logging.Filter):

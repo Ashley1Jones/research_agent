@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import uuid
 
 import research_agent.service
 import research_agent.logging_config
@@ -9,7 +8,7 @@ import research_agent.logging_config
 async def run() -> None:
     research_agent.logging_config.configure_logging()
 
-    correlation_id = uuid.uuid4().hex[:8]
+    correlation_id = research_agent.logging_config.generate_correlation_id()
     token = research_agent.logging_config.set_correlation_id(correlation_id)
 
     env_vars = research_agent.service.load_env_vars()
