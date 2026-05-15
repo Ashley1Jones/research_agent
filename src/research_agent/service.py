@@ -1,12 +1,12 @@
 import os
 import typing
+import logging
 
 import langchain_ollama
 
 import research_agent.models
 import research_agent.states
 import research_agent.workflow
-
 
 DEFAULT_DOCUMENT_TEXT = """
 Our multi-agent research system improves research quality,
@@ -49,7 +49,7 @@ async def run_audit(
 ) -> research_agent.states.ResearchAuditState:
     app = research_agent.workflow.build_workflow(audit_config)
 
-    initial_state: research_agent.states.ResearchAuditState = {
+    state: research_agent.states.ResearchAuditState = {
         "document_text": document_text,
         "claims": [],
         "literature_queries": [],
@@ -59,5 +59,14 @@ async def run_audit(
         "action_items": [],
     }
 
-    result = await app.ainvoke(initial_state)
-    return typing.cast(research_agent.states.ResearchAuditState, result)
+    async for event in app.astream(
+        state,
+        stream_mode="updates",
+    ):
+        for node_name, output in event.items():
+            if isinstance(output, dict):
+                state.update(output)  # type: ignore
+
+            logging.info(f'Node "{node_name}" got output {output}')
+
+    return typing.cast(research_agent.states.ResearchAuditState, state)
