@@ -1,15 +1,16 @@
 import asyncio
 import logging
+import uuid
 
 import research_agent.service
+import research_agent.logging_config
 
 
 async def run() -> None:
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-    )
+    research_agent.logging_config.configure_logging()
+
+    correlation_id = uuid.uuid4().hex[:8]
+    token = research_agent.logging_config.set_correlation_id(correlation_id)
 
     env_vars = research_agent.service.load_env_vars()
     config = research_agent.service.build_audit_config(env_vars)

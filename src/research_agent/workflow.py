@@ -9,6 +9,8 @@ import research_agent.models
 import research_agent.research_tools
 import research_agent.states
 
+import research_agent.logging_config
+
 
 def parse_bullets(text: str | list) -> list[str]:
     """Parse a bullet-point LLM response into a clean list of strings."""
@@ -96,7 +98,7 @@ async def search_literature(
                 research_agent.research_tools.search_arxiv,
                 query,
                 {"query": query, "max_results": audit_config.literature_result_limit},
-            )
+            ),
         ]
         results = await asyncio.gather(*tasks)
         grouped_results += results
