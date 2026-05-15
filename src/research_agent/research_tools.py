@@ -7,6 +7,8 @@ import langchain_core.tools
 
 import research_agent.states
 
+HttpxQueryParamValue = str | int | float | bool | None | typing.Sequence[str | int | float | bool | None]
+
 
 async def run_literature_tool(
     tool: typing.Any,
@@ -28,13 +30,13 @@ async def run_literature_tool(
 
 
 @langchain_core.tools.tool
-async def search_semantic_scholar(query: str, limit: int = 5) -> list[dict]:
+async def search_semantic_scholar(query: str, limit: int = 5) -> list[dict[str, typing.Any]]:
     """
     Search Semantic Scholar for recent academic papers related to a query.
     Returns paper titles, abstracts, years, URLs, and citation counts.
     """
     url = "https://api.semanticscholar.org/graph/v1/paper/search"
-    params = {
+    params: dict[str, HttpxQueryParamValue] = {
         "query": query,
         "limit": limit,
         "fields": "title,abstract,year,url,citationCount,authors",
@@ -44,19 +46,21 @@ async def search_semantic_scholar(query: str, limit: int = 5) -> list[dict]:
         response = await client.get(url, params=params)
         response.raise_for_status()
 
-    data = response.json()
-    results = []
+    data = typing.cast(dict[str, typing.Any], response.json())
+    results: list[dict[str, typing.Any]] = []
 
     for paper in data.get("data", []):
+        paper_data = typing.cast(dict[str, typing.Any], paper)
+        authors = typing.cast(list[dict[str, typing.Any]], paper_data.get("authors", []))
         results.append(
             {
                 "source": "semantic_scholar",
-                "title": paper.get("title"),
-                "abstract": paper.get("abstract"),
-                "year": paper.get("year"),
-                "url": paper.get("url"),
-                "citation_count": paper.get("citationCount"),
-                "authors": [author.get("name") for author in paper.get("authors", [])],
+                "title": paper_data.get("title"),
+                "abstract": paper_data.get("abstract"),
+                "year": paper_data.get("year"),
+                "url": paper_data.get("url"),
+                "citation_count": paper_data.get("citationCount"),
+                "authors": [author.get("name") for author in authors],
             }
         )
 
@@ -64,13 +68,13 @@ async def search_semantic_scholar(query: str, limit: int = 5) -> list[dict]:
 
 
 @langchain_core.tools.tool
-async def search_arxiv(query: str, max_results: int = 5) -> list[dict]:
+async def search_arxiv(query: str, max_results: int = 5) -> list[dict[str, typing.Any]]:
     """
     Search arXiv for recent papers related to a query.
     Returns title, summary, authors, publication date, and URL.
     """
     url = "https://export.arxiv.org/api/query"
-    params = {
+    params: dict[str, HttpxQueryParamValue] = {
         "search_query": f"all:{query}",
         "start": 0,
         "max_results": max_results,
@@ -84,7 +88,7 @@ async def search_arxiv(query: str, max_results: int = 5) -> list[dict]:
 
     root = xml.etree.ElementTree.fromstring(response.text)
     ns = {"atom": "http://www.w3.org/2005/Atom"}
-    results = []
+    results: list[dict[str, typing.Any]] = []
 
     for entry in root.findall("atom:entry", ns):
         title = entry.find("atom:title", ns)
@@ -92,21 +96,28 @@ async def search_arxiv(query: str, max_results: int = 5) -> list[dict]:
         published = entry.find("atom:published", ns)
         link = entry.find("atom:id", ns)
 
-        authors = [
-            author.find("atom:name", ns).text  # type: ignore
-            for author in entry.findall("atom:author", ns)
-            if author.find("atom:name", ns) is not None
-        ]
+        authors = []
+        for author in entry.findall("atom:author", ns):
+            author_name = text_or_none(author.find("atom:name", ns))
+            if author_name is not None:
+                authors.append(author_name)
 
         results.append(
             {
                 "source": "arxiv",
-                "title": title.text.strip() if title is not None else None,
-                "summary": summary.text.strip() if summary is not None else None,
-                "published": published.text if published is not None else None,
-                "url": link.text if link is not None else None,
+                "title": text_or_none(title),
+                "summary": text_or_none(summary),
+                "published": text_or_none(published),
+                "url": text_or_none(link),
                 "authors": authors,
             }
         )
 
     return results
+
+
+def text_or_none(element: xml.etree.ElementTree.Element | None) -> str | None:
+    if element is None or element.text is None:
+        return None
+
+    return element.text.strip()

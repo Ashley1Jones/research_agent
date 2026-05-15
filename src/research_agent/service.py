@@ -65,7 +65,7 @@ async def run_audit(
     ):
         for node_name, output in event.items():
             if isinstance(output, dict):
-                state.update(output)
+                state.update(output)  # type: ignore
 
             logging.info(f'Node "{node_name}" got output {output}')
 
