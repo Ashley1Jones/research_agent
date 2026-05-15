@@ -12,11 +12,11 @@ def generate_correlation_id() -> str:
     return uuid.uuid4().hex
 
 
-def set_correlation_id(correlation_id: str) -> contextvars.Token:
+def set_correlation_id(correlation_id: str) -> contextvars.Token[str | None]:
     return _correlation_id_var.set(correlation_id)
 
 
-def reset_correlation_id(token: contextvars.Token) -> None:
+def reset_correlation_id(token: contextvars.Token[str | None]) -> None:
     _correlation_id_var.reset(token)
 
 

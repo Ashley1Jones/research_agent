@@ -6,6 +6,7 @@ import os
 
 import httpx
 
+import research_agent.http_client
 import research_agent.service
 
 
@@ -38,7 +39,7 @@ async def run() -> None:
         pool=10.0,
     )
 
-    async with httpx.AsyncClient(timeout=timeout) as client:
+    async with research_agent.http_client.create_async_client(timeout=timeout) as client:
         response = await client.post(
             f"{api_url}/audit",
             json={"document_text": args.document_text},
