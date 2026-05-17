@@ -1,12 +1,13 @@
 import os
 import typing
+import logging
 
 import langchain_ollama
 
+import research_agent.http_client
 import research_agent.models
 import research_agent.states
 import research_agent.workflow
-
 
 DEFAULT_DOCUMENT_TEXT = """
 Our multi-agent research system improves research quality,
@@ -32,12 +33,15 @@ def build_audit_config(env_vars: research_agent.models.EnvVars) -> research_agen
         model=env_vars.MODEL_TYPE,
         base_url=env_vars.create_url(),
         temperature=0,
+        async_client_kwargs=research_agent.http_client.create_async_client_kwargs(),
     )
 
     return research_agent.models.ResearchAuditConfig(
         llm=llm,
         default_claims=DEFAULT_CLAIMS,
         action_prefix=ACTION_PREFIX,
+        literature_query_count=3,
+        literature_result_limit=5,
     )
 
 
@@ -47,12 +51,24 @@ async def run_audit(
 ) -> research_agent.states.ResearchAuditState:
     app = research_agent.workflow.build_workflow(audit_config)
 
-    initial_state: research_agent.states.ResearchAuditState = {
+    state: research_agent.states.ResearchAuditState = {
         "document_text": document_text,
         "claims": [],
+        "literature_queries": [],
+        "literature_results": [],
+        "contradictions": [],
         "logic_gaps": [],
         "action_items": [],
     }
 
-    result = await app.ainvoke(initial_state)
-    return typing.cast(research_agent.states.ResearchAuditState, result)
+    async for event in app.astream(
+        state,
+        stream_mode="updates",
+    ):
+        for node_name, output in event.items():
+            if isinstance(output, dict):
+                state.update(output)  # type: ignore
+
+            logging.info(f'Node "{node_name}" got output {output}')
+
+    return typing.cast(research_agent.states.ResearchAuditState, state)
