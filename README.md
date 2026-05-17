@@ -25,6 +25,30 @@ The project can be run as a local CLI, as a FastAPI service, or through Docker C
 - Pydantic
 - Docker Compose
 
+## Project Structure
+
+### Source Package
+
+| File | Summary |
+| --- | --- |
+| `src/research_agent/__init__.py` | Marks `research_agent` as an importable Python package. |
+| `src/research_agent/api.py` | Defines the FastAPI app, request correlation middleware, health endpoint, and `/audit` endpoint. |
+| `src/research_agent/http_client.py` | Provides shared async HTTPX client helpers and request/response logging hooks for outbound HTTP calls. |
+| `src/research_agent/logging_config.py` | Configures application logging and stores correlation IDs in a context variable so logs can include request context. |
+| `src/research_agent/models.py` | Defines configuration, environment, request, and response models used by the CLI and API. |
+| `src/research_agent/research_tools.py` | Defines async literature search tools for Semantic Scholar and arXiv, plus helper logic for normalizing tool results. |
+| `src/research_agent/service.py` | Contains shared service setup, default audit inputs, environment loading, LLM configuration, and audit workflow execution. |
+| `src/research_agent/states.py` | Defines TypedDict state objects passed through the LangGraph research audit workflow. |
+| `src/research_agent/workflow.py` | Builds the LangGraph workflow and contains the async workflow nodes for claim extraction, literature search, contradiction detection, logic gap detection, and action item generation. |
+
+### Scripts
+
+| File | Summary |
+| --- | --- |
+| `scripts/api.py` | Starts the FastAPI application with Uvicorn using host and port values from the environment. |
+| `scripts/client.py` | Calls the running API with document text, optionally waits for startup, and logs the JSON audit response. |
+| `scripts/main.py` | Runs the audit workflow directly from the command line using the built-in sample document. |
+
 ## Requirements
 
 - Python 3.13 or newer
